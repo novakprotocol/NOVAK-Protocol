@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "The NOVAK Protocol: A Cryptographic Primitive for Deterministic Execution Integrity"
+authors:
+  - family-names: Novak
+    given-names: Matthew S.
+version: "1.0"
+date-released: 2025-01-01
+doi: ""
+url: "https://github.com/novakprotocol/NOVAK-Protocol"
+abstract: >
+  The NOVAK Protocol defines Proof-Before-Action (PbA), the first 
+  cryptographic primitive that enforces deterministic execution 
+  integrity by requiring a Hash-Verified Execution Trace (HVET) 
+  prior to system action. This repository contains the authoritative 
+  formal specification, appendices, and reference vectors.
+keywords:
+  - cryptography
+  - execution integrity
+  - hash-based proofs
+  - deterministic verification
+  - HVET
+  - EIR
+  - RGAC
+  - canonical encoding
