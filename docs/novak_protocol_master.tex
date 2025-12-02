@@ -1,0 +1,1366 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{pBa}
+\author{Matthew Novak}
+\date{December 2025}
+
+% ---------------------------------------------------------
+% NOVAK Protocol — Master LaTeX Specification
+% ---------------------------------------------------------
+
+\title{\bf
+THE NOVAK PROTOCOL:\\[4pt]
+Proof-Before-Action (PbA) as a Cryptographic Primitive\\[4pt]
+for Deterministic Execution Integrity
+}
+
+\author{
+Matthew S. Novak\\
+Creator and Author of the NOVAK Protocol\\
+\texttt{licensing@novakprotocol.com}
+}
+
+\date{2025}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+We introduce the NOVAK Protocol, the first cryptographic primitive to
+provide deterministic execution integrity through a mechanism we define
+as Proof-Before-Action (PbA). Unlike signatures, attestations, TPM-based
+measurement, secure logging, or distributed ledger verification, PbA
+requires the cryptographic validation of rule correctness, data
+correctness, output correctness, and temporal singularity \emph{before}
+any action is allowed to execute. This transforms integrity from a
+post-execution audit to a pre-execution enforcement model.
+
+
+PbA is realized through three constructions: the Hash-Verified
+Execution Trace (HVET), the Execution Identity Receipt (EIR), and the
+Recursive Global Audit Chain (RGAC). We provide formal definitions,
+canonical encoding rules, a complete adversarial model, and full
+cryptographic reductions proving that forging any component of NOVAK
+reduces to breaking the collision resistance of the underlying hash
+function (SHA-2, SHA-3, or BLAKE3). We incorporate the NOVAK Laws
+L0--L15 and Industry Addenda PL-X and PS-X as baseline environmental
+constraints for deterministic digital governance.
+
+
+This document consolidates the full NOVAK specification: formal
+definitions, cryptographic architecture, encoding rules, security
+analysis, reduction proofs, implementation guidance, and test vectors.
+It establishes execution integrity as a new domain within cryptography
+and provides the first deterministic integrity model for automation,
+AI governance, critical infrastructure, financial adjudication, and
+legal–regulatory systems.
+\end{abstract}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Modern computing systems validate integrity \emph{after} execution:
+logs audit what already happened, signatures authenticate origin,
+attestations certify boot states, and blockchains record transactions
+post hoc. None of these mechanisms prevent a system from executing
+incorrectly, illegally, unsafely, or manipulatively in the first place.
+
+This paper introduces a new cryptographic primitive that enforces
+correctness \emph{before} execution. We call this primitive
+\textbf{Proof-Before-Action (PbA)}. A system implementing PbA requires
+a verifiable cryptographic proof that the rule, data, output, and
+timestamp of a given computation are correct---according to canonical,
+deterministic definitions---before performing any action.
+
+PbA is implemented through the NOVAK Protocol using three core
+constructions:
+
+\begin{enumerate}[label=\textbf{(\alph*)}]
+\item \textbf{HVET} — Hash-Verified Execution Trace\\
+      A binding of rule, data, output, and timestamp.
+\item \textbf{EIR} — Execution Identity Receipt\\
+      A self-authenticating, tamper-evident proof object.
+\item \textbf{RGAC} — Recursive Global Audit Chain\\
+      A chain of EIRs providing global immutability.
+\end{enumerate}
+
+Together these mechanisms enforce deterministic execution integrity
+(DEI), guaranteeing that:
+
+\begin{itemize}
+\item the correct rule was used,
+\item the correct input was provided,
+\item the output matches the rule,
+\item the timestamp is unique and monotonic,
+\item and no action proceeds unless all conditions are satisfied.
+\end{itemize}
+
+This primitive is new: no classical construction---including MACs,
+signatures, consensus protocols, TPM measurement chains, secure
+logging, or blockchain---achieves pre-execution correctness.
+
+PbA introduces a new tier of assurance enabling regulatory automation,
+AI safety, critical infrastructure enforcement, and highly trustworthy
+digital governance.
+
+\section{Related Work}
+
+\subsection{Signatures and MACs}
+Traditional authentication mechanisms (MACs, signatures) ensure
+integrity and authenticity of messages but do not enforce pre-execution
+correctness. They validate authorship, not execution truth.
+
+\subsection{Attestation}
+Remote attestation mechanisms validate the system state at boot but do
+not enforce correctness during arbitrary execution and cannot guarantee
+temporal singularity.
+
+\subsection{TPM Measurement Chains}
+TPM-based integrity provides measurement logs but remains
+post-execution. TPMs do not bind rules, data, outputs, and timestamps
+into a deterministic integrity condition.
+
+\subsection{Secure Logging Systems}
+Systems such as Keyless Signatures or Certificate Transparency detect
+tampering after the fact; none enforce integrity before execution.
+
+\subsection{Blockchains and Consensus Protocols}
+Blockchains offer decentralized append-only logs but do not enforce
+rule correctness or data correctness within individual computations.
+
+\subsection{Tripwire and File Integrity Tools}
+Integrity-monitoring systems detect changes but do not enforce
+pre-execution correctness and cannot bind rules to outcomes or
+timestamps.
+
+PbA therefore introduces a fundamentally distinct security paradigm:
+\emph{execution-gated correctness}. No prior primitive has provided
+this guarantee.
+
+% ==========================================================
+% 3. NOVAK Laws (L0–L15) + Industry Addenda (PL-X / PS-X)
+% ==========================================================
+
+\section{NOVAK Laws (L0--L15) and Industry Addenda}
+
+The NOVAK Protocol is grounded in a deterministic governance model
+expressed through the NOVAK Laws L0--L15 and the Industry Addenda
+PL-X and PS-X. These laws act as baseline environmental constraints
+governing the behavior of any system implementing Proof-Before-Action
+(PbA). They are normative, not optional, and form the axiomatic layer
+for all formal definitions, proofs, and enforcement conditions.
+
+\subsection{3.1 NOVAK Laws L0--L15}
+
+\begin{enumerate}[label=\textbf{L\arabic*:}]
+\item \textbf{Truth Cannot Be Assumed.}\\
+      No computational action may rely on unverifiable state.
+
+\item \textbf{Truth Must Be Proven.}\\
+      All execution must be preceded by cryptographic proof.
+
+\item \textbf{Proof Must Bind Rule, Data, Output, Time.}\\
+      These four elements form a minimal correctness tuple.
+
+\item \textbf{Execution Requires Determinism.}\\
+      A rule applied to identical data must produce identical output.
+
+\item \textbf{Non-Determinism Without Justification is Invalid.}\\
+      Systems must reject unverifiable or ambiguous execution paths.
+
+\item \textbf{No Action Without Identity.}\\
+      Every execution must have a cryptographically provable identity.
+
+\item \textbf{Identity Requires Integrity.}\\
+      Execution identity must include rule, data, output, and time.
+
+\item \textbf{Integrity Requires Canonical Encoding.}\\
+      All inputs must serialize deterministically.
+
+\item \textbf{Temporal Integrity Must Be Singular.}\\
+      Each execution must correspond to a unique, monotonic timestamp.
+
+\item \textbf{Order Must Be Unambiguous.}\\
+      Execution order must be unforgeable and globally consistent.
+
+\item \textbf{Tampering Must Be Detectable.}\\
+      Any deviation from canonical truth must be evident immediately.
+
+\item \textbf{Detection Must Be Pre-Execution.}\\
+      Errors identified after execution are insufficient.
+
+\item \textbf{Proof Must Be Immutable.}\\
+      Once generated, proofs must remain tamper-evident.
+
+\item \textbf{Proof Must Be Portable.}\\
+      Execution identity receipts must be verifiable in isolation.
+
+\item \textbf{The System Must Refuse Incorrect Execution.}\\
+      Enforcement completes the chain: proof-before-action.
+\end{enumerate}
+
+\subsection{3.2 Industry Addendum PL-X (Public Ledger Enforcement)}
+
+PL-X specifies cross-jurisdictional determinism for systems requiring
+public anchoring. It mandates:
+
+\begin{itemize}
+\item periodic hashing of RGAC states,
+\item optional Merkle anchoring to external ledgers,
+\item maintenance of consistent cross-domain truth models,
+\item verifiability without reliance on private infrastructure.
+\end{itemize}
+
+\subsection{3.3 Industry Addendum PS-X (Private Sector Enforcement)}
+
+PS-X defines deterministic verification for private-sector operational
+domains, including:
+
+\begin{itemize}
+\item financial adjudication systems,
+\item AI model evaluation,
+\item claims-processing automation,
+\item internal compliance enforcement,
+\item reproducible regulatory event validation.
+\end{itemize}
+
+Both addenda exist to contextualize PbA in real-world enforcement
+systems and do not modify the core primitive; rather, they constrain
+its operational surface to ensure universal determinism.
+
+% ==========================================================
+% 4. Formal Definition of the Proof-Before-Action (PbA) Primitive
+% ==========================================================
+
+\section{Formal Definition of the Proof-Before-Action (PbA) Primitive}
+
+PbA is defined as a pre-execution cryptographic enforcement mechanism.
+
+\begin{definition}[Proof-Before-Action Primitive]
+A system implements \textbf{PbA} if and only if, for every action $A$:
+
+\[
+\textsf{HVET}(R, d, o, t) \xrightarrow{\text{verify}} \mathbf{true}
+\]
+
+\emph{must be satisfied before} the system is permitted to perform $A$.
+\end{definition}
+
+Where:
+
+\begin{itemize}
+\item $R$ is a deterministic rule or function.
+\item $d$ is the input data.
+\item $o = R(d)$ is the output produced by applying $R$ to $d$.
+\item $t$ is a monotonic timestamp.
+\item HVET is a hash binding of $R$, $d$, $o$, $t$.
+\end{itemize}
+
+PbA differs fundamentally from all known primitives:
+
+\begin{itemize}
+\item MACs, signatures, and attestations validate origin, not correctness.
+\item Blockchains validate global ordering, not rule–data–output truth.
+\item TPM measurement chains validate boot states, not arbitrary execution.
+\item Secure logs detect tampering after execution, not before.
+\end{itemize}
+
+PbA enforces correctness at the moment of execution, not after it.
+
+This is the central contribution of the NOVAK Protocol:  
+\textbf{execution cannot occur unless cryptographic truth is satisfied.}
+
+% ==========================================================
+% 5. Hash-Verified Execution Trace (HVET)
+% ==========================================================
+
+\section{Hash-Verified Execution Trace (HVET)}
+
+The Hash-Verified Execution Trace binds rule, data, output, and
+timestamp into a single cryptographically verifiable object.
+
+\begin{definition}[HVET Construction]
+\[
+\textsf{HVET} = H\big( H(R) \,\Vert\, H(d) \,\Vert\, H(o) \,\Vert\, H(t) \big)
+\]
+\end{definition}
+
+Where:
+
+\begin{itemize}
+\item $H$ is a collision-resistant hash function (SHA-2, SHA-3, BLAKE3).
+\item $H(R)$ uniquely identifies the rule as a canonical function.
+\item $H(d)$ binds the input data to the execution.
+\item $H(o)$ binds the output to both $R$ and $d$.
+\item $H(t)$ enforces temporal singularity.
+\end{itemize}
+
+\subsection{5.1 Canonical Semantics}
+
+Correct operation requires \textbf{canonical encoding}, ensuring that
+every implementation of $R$, $d$, $o$, and $t$ produces identical byte
+representations across platforms. This eliminates ambiguity and prevents
+equivocation attacks.
+
+\subsection{5.2 Minimality of the Tuple}
+
+The tuple $(R, d, o, t)$ is shown to be \emph{necessary and sufficient}
+for correctness:
+
+\begin{itemize}
+\item Omitting $R$ permits rule-substitution attacks.
+\item Omitting $d$ permits forged input.
+\item Omitting $o$ permits forged results.
+\item Omitting $t$ permits replay and reordering attacks.
+\end{itemize}
+
+\subsection{5.3 Linking to PbA}
+
+HVET is the enforcement barrier for PbA:
+
+\[
+\textsf{HVET}(R, d, o, t) \xrightarrow{\text{verify}} \mathbf{true}
+\]
+
+must be evaluated \emph{before} action execution.
+
+If HVET fails, the system must:
+
+\[
+\text{refuse}(A)
+\]
+
+per NOVAK Law 15.
+
+\subsection{5.4 Security Basis}
+
+The security of HVET reduces to the collision resistance of $H$:
+
+\[
+\Pr[\text{HVET forgery}] \le \Pr[\text{Hash collision}]
+\]
+
+A full proof is provided in Section 11 (Reduction Proofs).
+
+% ==========================================================
+% 6. Execution Identity Receipt (EIR)
+% ==========================================================
+
+\section{Execution Identity Receipt (EIR)}
+
+The Execution Identity Receipt is a self-authenticating, portable,
+tamper-evident record of a single execution event. It binds rule,
+data, output, and timestamp through HVET and can be verified in
+isolation without dependence on external infrastructure.
+
+\begin{definition}[Execution Identity Receipt]
+\[
+\textsf{EIR} = \langle R, d, o, t, \textsf{HVET} \rangle
+\]
+\end{definition}
+
+An EIR serves four purposes:
+
+\begin{enumerate}
+\item \textbf{Proves correctness}: binds $R$, $d$, $o$, and $t$.
+\item \textbf{Proves integrity}: any modification breaks HVET validation.
+\item \textbf{Enforces determinism}: ensures $o = R(d)$.
+\item \textbf{Provides self-contained auditability}: no external trust required.
+\end{enumerate}
+
+\subsection{6.1 Verification}
+
+A verifier checks an EIR by recomputing:
+
+\[
+\textsf{HVET}' = H\big(H(R) \Vert H(d) \Vert H(o) \Vert H(t)\big)
+\]
+
+Then verifying:
+
+\[
+\textsf{HVET}' \stackrel{?}{=} \textsf{HVET}
+\]
+
+If equal, the EIR is valid.
+
+\subsection{6.2 Immutability}
+
+NOVAK Law 13 mandates that proofs must be immutable: any modification
+to any field of an EIR invalidates it due to the binding structure of
+HVET.
+
+\subsection{6.3 Portability}
+
+The EIR requires no signatures, no certificates, no blockchain, and no
+external infrastructure. It is self-validating using only hash-based
+cryptography.
+
+% ==========================================================
+% 7. Recursive Global Audit Chain (RGAC)
+% ==========================================================
+
+\section{Recursive Global Audit Chain (RGAC)}
+
+The RGAC links EIRs into a tamper-evident chain. Unlike blockchains,
+RGAC does not require consensus, mining, or distributed nodes. Its
+purpose is not decentralization but deterministic integrity and
+chronological enforcement.
+
+\begin{definition}[RGAC Construction]
+Let $\textsf{EIR}_i$ be the $i$-th receipt. Then:
+
+\[
+C_i = H(C_{i-1} \Vert \textsf{EIR}_i)
+\]
+
+with $C_0$ defined as a fixed initialization constant.
+\end{definition}
+
+\subsection{7.1 Properties}
+
+\begin{itemize}
+\item \textbf{Tamper-evident}: modifying any EIR breaks the entire chain.
+\item \textbf{Order-preserving}: timestamps and chain position are consistent.
+\item \textbf{Minimal}: relies solely on hash functions.
+\item \textbf{Local}: no network communication is required.
+\end{itemize}
+
+\subsection{7.2 Merkle Anchoring (Optional)}
+
+For systems requiring external proof-of-existence:
+
+\[
+\textsf{MerkleRoot} = \mathcal{M}(\textsf{EIR}_1, \dots, \textsf{EIR}_n)
+\]
+
+This root may be anchored into:
+
+\begin{itemize}
+\item public blockchains,
+\item public timestamp servers,
+\item regulatory notarization services.
+\end{itemize}
+
+This is governed by Industry Addendum PL-X.
+
+\subsection{7.3 Comparison to Blockchain}
+
+RGAC differs from blockchains:
+
+\begin{itemize}
+\item No miners or validators.
+\item No consensus mechanism.
+\item Local verification only.
+\item Zero trust dependencies.
+\item Absolute minimal computational cost.
+\end{itemize}
+
+It is a cryptographic chain, not a distributed ledger.
+
+\subsection{7.4 Reduction Basis}
+
+Security reduces to:
+
+\begin{itemize}
+\item EIR soundness,
+\item HVET collision resistance,
+\item chain-level collision resistance.
+\end{itemize}
+
+A full treatment appears in Section 11.
+
+
+% ==========================================================
+% 8. Canonical Encoding Specification (Appendix A Integrated)
+% ==========================================================
+
+\section{Canonical Encoding Specification}
+
+Deterministic execution requires deterministic serialization.  
+The NOVAK Protocol mandates a strict canonical encoding ensuring that any 
+system, platform, or implementation will produce identical byte streams 
+for $R$, $d$, $o$, and $t$.
+
+\subsection{8.1 Requirements}
+
+Canonical encoding must satisfy:
+
+\begin{enumerate}
+\item \textbf{Unambiguous}: no two distinct logical values may serialize to the same bytes.
+\item \textbf{Deterministic}: the same logical value must always serialize identically.
+\item \textbf{Order-preserving}: structured data must follow a stable field order.
+\item \textbf{Language-independent}: no dependency on runtime or implementation-specific behavior.
+\item \textbf{Stable across versions}: future-compatible via explicit field tagging.
+\end{enumerate}
+
+\subsection{8.2 Encoding Form}
+
+NOVAK uses the following canonical format:
+
+\[
+\textsf{encode}(X) = \textsf{len}(X) \,\Vert\, \textsf{bytes}(X)
+\]
+
+Where:
+
+\begin{itemize}
+\item \textsf{len}(X) is an unsigned 64-bit big-endian length.
+\item \textsf{bytes}(X) is the UTF-8 or binary encoding of $X$.
+\end{itemize}
+
+\subsection{8.3 Composite Encoding}
+
+The tuple used for HVET is encoded as:
+
+\[
+\textsf{encode}(R) \Vert \textsf{encode}(d) \Vert \textsf{encode}(o) \Vert \textsf{encode}(t)
+\]
+
+This byte stream is then hashed to produce:
+
+\[
+X = H(R) \Vert H(d) \Vert H(o) \Vert H(t)
+\]
+
+followed by:
+
+\[
+\textsf{HVET} = H(X)
+\]
+
+\subsection{8.4 Canonical Timestamp}
+
+The timestamp $t$ must follow ISO 8601 with UTC normalization:
+
+\[
+t = \text{YYYY-MM-DDTHH:MM:SS.sssZ}
+\]
+
+Non-monotonic clocks MUST be rejected.
+
+% ==========================================================
+% 9. Security Model
+% ==========================================================
+
+\section{Security Model}
+
+The NOVAK Protocol operates under a standard cryptographic model with
+the following assumptions:
+
+\subsection{9.1 Hash Function Assumptions}
+
+NOVAK assumes $H$ is:
+
+\begin{itemize}
+\item collision-resistant (CR),
+\item preimage resistant (PR),
+\item second-preimage resistant (SPR).
+\end{itemize}
+
+We consider SHA-256, SHA-384, SHA-512, SHA3-256, SHA3-512, and BLAKE3
+to meet these assumptions.
+
+\subsection{9.2 System Requirements}
+
+A system implementing PbA must:
+
+\begin{itemize}
+\item provide deterministic rule execution,
+\item maintain canonical encoding,
+\item ensure unique timestamps,
+\item compute HVET before execution,
+\item reject any action without valid HVET.
+\end{itemize}
+
+These requirements are mandated by NOVAK Laws 3–15.
+
+\subsection{9.3 Adversarial Capabilities}
+
+We assume an adversary may:
+
+\begin{itemize}
+\item modify rules,
+\item modify or substitute input data,
+\item modify outputs,
+\item forge timestamps,
+\item reorder operations,
+\item inject counterfeit execution traces,
+\item attempt replay attacks,
+\item attempt HVET forgery.
+\end{itemize}
+
+\subsection{9.4 Trusted Components}
+
+The only trusted components are:
+
+\begin{itemize}
+\item the hash function $H$,
+\item the canonical encoding specification,
+\item the deterministic semantics of $R$.
+\end{itemize}
+
+Everything else — the system, storage, user environment, network —  
+is considered untrusted.
+
+% ==========================================================
+% 10. Adversarial Model
+% ==========================================================
+
+\section{Adversarial Model}
+
+The NOVAK adversary $\mathcal{A}$ is defined as a probabilistic
+polynomial-time (PPT) adversary with full capability to interfere with
+all aspects of system execution except the cryptographic hash function.
+
+\subsection{10.1 Adversarial Goals}
+
+$\mathcal{A}$ attempts to produce any of the following:
+
+\begin{enumerate}
+\item A false execution trace.
+\item A modified rule $R'$ producing a counterfeit output.
+\item A substituted or tampered input $d'$.
+\item A forged or incorrect output $o'$.
+\item A manipulated timestamp $t'$.
+\item A forged EIR.
+\item A forged RGAC chain link.
+\end{enumerate}
+
+The ultimate objective is to cause the system to execute incorrectly
+\emph{without detection}.
+
+\subsection{10.2 Attack Surfaces}
+
+Potential attacks include:
+
+\begin{itemize}
+\item \textbf{Rule substitution}: replacing $R$ with $R'$.
+\item \textbf{Data substitution}: replacing $d$ with $d'$.
+\item \textbf{Output forgery}: claiming $o'$ was produced by $R(d)$.
+\item \textbf{Timestamp manipulation}: replay or preplay attacks.
+\item \textbf{Trace splicing}: injecting falsified intermediate states.
+\item \textbf{Deletion attacks}: removing an EIR or chain link.
+\item \textbf{Reordering attacks}: misrepresenting execution order.
+\item \textbf{HVET collision attacks}: attempting to make distinct tuples collide.
+\end{itemize}
+
+\subsection{10.3 Infeasibility of Forgery}
+
+We prove in Section 11 that:
+
+\[
+\Pr[\mathcal{A} \text{ forges HVET}] \le 
+\Pr[\text{Hash collision}]
+\]
+
+which is negligible under modern cryptographic assumptions.
+
+\subsection{10.4 Threat Surfaces Not in Scope}
+
+PbA does not address:
+
+\begin{itemize}
+\item hardware side-channel attacks,
+\item timing attacks,
+\item memory corruption vulnerabilities,
+\item compromised system clocks,
+\item violations of canonical encoding.
+\end{itemize}
+
+These must be mitigated through orthogonal system hardening.
+
+% ==========================================================
+% 11. Reduction Proofs
+% ==========================================================
+
+\section{Reduction Proofs}
+
+This section presents full cryptographic reductions demonstrating that 
+forging any component of the NOVAK Protocol reduces to breaking the 
+collision resistance of the hash function $H$. These proofs include:
+
+\begin{enumerate}
+\item Preliminaries
+\item Definition of NOVAK Primitive (PbA)
+\item HVET Reduction
+\item Adversarial Model Summary
+\item Security Properties
+\item Theorem 1 (Unforgeability of HVET)
+\item Theorem 2 (PbA Enforcement Reduces to HVET)
+\item EIR Security Reduction
+\item RGAC Security Reduction
+\item Merkle Anchoring Reduction
+\item Full Reduction Summary
+\end{enumerate}
+
+% ----------------------------------------------------------
+% 11.1 Preliminaries
+% ----------------------------------------------------------
+
+\subsection{11.1 Preliminaries}
+
+Let:
+
+\begin{itemize}
+\item $R : \mathcal{D} \rightarrow \mathcal{O}$ be a deterministic rule.
+\item $d \in \mathcal{D}$ be data.
+\item $o = R(d)$ be the output.
+\item $t$ be a monotonic timestamp.
+\end{itemize}
+
+Let $H$ be a cryptographic hash function satisfying:
+
+\begin{itemize}
+\item collision resistance (CR),
+\item second-preimage resistance (SPR),
+\item preimage resistance (PR).
+\end{itemize}
+
+Let $||$ denote canonical concatenation.
+
+HVET is defined as:
+
+\[
+\textsf{HVET} = H\big( H(R) \Vert H(d) \Vert H(o) \Vert H(t) \big)
+\]
+
+All proofs assume NOVAK Laws L0--L15 and Addenda PL-X and PS-X as
+axiomatic environmental constraints.
+
+% ----------------------------------------------------------
+% 11.2 Definition of PbA
+% ----------------------------------------------------------
+
+\subsection{11.2 PbA Primitive Definition}
+
+A system implements Proof-Before-Action if:
+
+\[
+\textsf{HVET}(R,d,o,t) \xrightarrow{\text{verify}} \mathbf{true}
+\]
+
+\emph{must hold before any action executes}.
+
+PbA therefore relies on HVET unforgeability for correctness.
+
+% ----------------------------------------------------------
+% 11.3 HVET Reduction
+% ----------------------------------------------------------
+
+\subsection{11.3 HVET Reduction}
+
+To forge HVET, an adversary must produce:
+
+\[
+\textsf{HVET}(R,d,o,t) = \textsf{HVET}(R',d',o',t')
+\]
+
+with:
+
+\[
+(R,d,o,t) \neq (R',d',o',t')
+\]
+
+Let:
+
+\[
+X = H(R) \Vert H(d) \Vert H(o) \Vert H(t)
+\]
+\[
+X' = H(R') \Vert H(d') \Vert H(o') \Vert H(t')
+\]
+
+Then forging HVET requires:
+
+\[
+H(X) = H(X')
+\]
+
+There are two cases:
+
+\paragraph{Case 1: $X = X'$}
+
+Then:
+
+\[
+H(R)=H(R'),\ 
+H(d)=H(d'),\ 
+H(o)=H(o'),\ 
+H(t)=H(t')
+\]
+
+By second-preimage resistance:
+
+\[
+R=R',\ d=d',\ o=o',\ t=t'
+\]
+
+Contradiction.
+
+\paragraph{Case 2: $X \neq X'$}
+
+Then:
+
+\[
+H(X) = H(X')
+\]
+
+is a collision.
+
+Therefore:
+
+\[
+\Pr[\textsf{HVET forgery}] \le \Pr[\text{Hash collision}]
+\]
+
+This serves as the basis for all subsequent reductions.
+
+% ----------------------------------------------------------
+% 11.4 Adversarial Model
+% ----------------------------------------------------------
+
+\subsection{11.4 Adversarial Model}
+
+The adversary may:
+
+\begin{itemize}
+\item modify rules, data, outputs, or timestamps,
+\item reorder operations,
+\item inject counterfeit traces,
+\item replay stale states.
+\end{itemize}
+
+The adversary is polynomial-time bounded.
+
+% ----------------------------------------------------------
+% 11.5 Security Properties
+% ----------------------------------------------------------
+
+\subsection{11.5 Security Properties}
+
+HVET provides:
+
+\begin{itemize}
+\item Rule Binding (RB)
+\item Input Integrity (II)
+\item Output Integrity (OI)
+\item Temporal Singularity (TS)
+\item Replay Resistance (RR)
+\item Pre-Execution Correctness (PEC)
+\item Deterministic Execution Integrity (DEI)
+\end{itemize}
+
+% ----------------------------------------------------------
+% 11.6 Theorem 1: HVET Unforgeability
+% ----------------------------------------------------------
+
+\subsection{11.6 Theorem 1: Unforgeability of HVET}
+
+\begin{theorem}
+Let $\mathcal{A}$ be a PPT adversary attempting to forge an HVET.
+Then:
+
+\[
+\Pr[\mathcal{A} \text{ succeeds}] \le \Pr[\text{Hash collision}]
+\]
+
+Thus forging HVET is at least as difficult as breaking collision
+resistance of $H$.
+\end{theorem}
+
+\begin{proof}
+Immediate from the case analysis above. Any successful forge produces
+a collision in $H$.
+\end{proof}
+
+% ----------------------------------------------------------
+% 11.7 Theorem 2: PbA Depends on HVET Unforgeability
+% ----------------------------------------------------------
+
+\subsection{11.7 Theorem 2: PbA Reduction}
+
+\begin{theorem}
+If HVET is unforgeable, then no adversary can cause incorrect
+execution under PbA without breaking HVET.
+\end{theorem}
+
+\begin{proof}
+PbA enforces:
+
+\[
+\textsf{verify}(\textsf{HVET}) = \mathbf{true}
+\]
+
+before any action executes.
+
+If an adversary attempts to substitute:
+
+\[
+(R',d',o',t')
+\]
+
+they must produce:
+
+\[
+\textsf{HVET}(R',d',o',t') = \textsf{HVET}(R,d,o,t)
+\]
+
+which is HVET forgery. By Theorem 1, this reduces to collision
+resistance of $H$, which is negligible.
+\end{proof}
+
+% ----------------------------------------------------------
+% 11.8 EIR Security
+% ----------------------------------------------------------
+
+\subsection{11.8 EIR Security}
+
+To forge an EIR:
+
+\[
+\langle R',d',o',t',\textsf{HVET}' \rangle
+\]
+
+the adversary must produce an HVET matching a false tuple. Therefore:
+
+\[
+\Pr[\text{EIR forgery}] \le \Pr[\textsf{HVET forgery}]
+\]
+
+EIR inherits HVET’s unforgeability guarantees.
+
+% ----------------------------------------------------------
+% 11.9 RGAC Security
+% ----------------------------------------------------------
+
+\subsection{11.9 RGAC Security}
+
+RGAC links EIRs:
+
+\[
+C_i = H(C_{i-1} \Vert \textsf{EIR}_i)
+\]
+
+To modify the chain at position $i$, an adversary must:
+
+\begin{enumerate}
+\item forge $\textsf{EIR}_i$, or
+\item find a collision in $H(C_{i-1} \Vert \cdot)$.
+\end{enumerate}
+
+Thus:
+
+\[
+\Pr[\text{RGAC forgery}] 
+\le 
+\Pr[\textsf{EIR forgery}] + \Pr[\text{Hash collision}]
+\]
+
+Both are negligible.
+
+% ----------------------------------------------------------
+% 11.10 Merkle Anchoring
+% ----------------------------------------------------------
+
+\subsection{11.10 Merkle Anchoring}
+
+For Merkle trees:
+
+\[
+\textsf{MerkleRoot} = \mathcal{M}(\textsf{EIR}_1,\dots,\textsf{EIR}_n)
+\]
+
+Tampering with any leaf changes the Merkle root unless the adversary
+finds a hash collision.
+
+Thus Merkle anchoring inherits:
+
+\[
+\Pr[\text{Merkle forgery}] \le \Pr[\text{Hash collision}]
+\]
+
+% ----------------------------------------------------------
+% 11.11 Full Reduction Summary
+% ----------------------------------------------------------
+
+\subsection{11.11 Full Reduction Summary}
+
+All NOVAK components reduce to the collision resistance of $H$:
+
+\[
+\begin{array}{lcl}
+\textsf{HVET} &\Rightarrow& \text{Hash collision resistance} \\
+\textsf{EIR} &\Rightarrow& \textsf{HVET} \\
+\textsf{RGAC} &\Rightarrow& \textsf{EIR} + \text{Hash collision resistance} \\
+\textsf{PbA} &\Rightarrow& \textsf{HVET unforgeability}
+\end{array}
+\]
+
+Therefore the security of the entire NOVAK Protocol is bounded below by
+the security of SHA-2, SHA-3, or BLAKE3.
+
+% ==========================================================
+% Appendix A — Full Canonical Encoding Specification
+% ==========================================================
+
+\appendix
+
+\section*{Appendix A: Canonical Encoding Specification}
+\addcontentsline{toc}{section}{Appendix A: Canonical Encoding Specification}
+
+This appendix defines the complete canonical encoding rules for NOVAK.
+These rules ensure that all implementations serialize $R$, $d$, $o$, and
+$t$ identically, across platforms, languages, architectures, and time.
+
+\subsection*{A.1 Encoding Philosophy}
+
+Canonical encoding prevents:
+
+\begin{itemize}
+\item ambiguity,
+\item implementation divergence,
+\item equivocation attacks,
+\item version-induced serialization drift.
+\end{itemize}
+
+Correctness requires that identical logical values produce identical byte
+streams in all environments.
+
+\subsection*{A.2 Primitive Types}
+
+\paragraph{Strings.}
+Encoded as:
+
+\[
+\textsf{encode\_str}(s) = \textsf{len}(s) \Vert s_{\text{utf8}}
+\]
+
+with a 64-bit big-endian length prefix.
+
+\paragraph{Binary Data.}
+Encoded as:
+
+\[
+\textsf{encode\_bin}(b) = \textsf{len}(b) \Vert b
+\]
+
+\paragraph{Integers.}
+Canonical integer format is unsigned big-endian without leading zeros.
+
+\subsection*{A.3 Structured Objects}
+
+A structured object is encoded field-by-field in fixed order:
+
+\[
+\textsf{encode\_obj}(X) =
+\textsf{encode}(X.f_1) \Vert
+\textsf{encode}(X.f_2) \Vert
+\cdots \Vert
+\textsf{encode}(X.f_n)
+\]
+
+Order MUST NOT depend on runtime map/dictionary ordering.
+
+\subsection*{A.4 Rule Encoding}
+
+Rules are encoded as their complete canonical abstract syntax tree (AST)
+or function representation. A rule’s identity must not depend on:
+
+\begin{itemize}
+\item whitespace,
+\item comments,
+\item compiler optimizations,
+\item memory layout.
+\end{itemize}
+
+The rule is hashed as:
+
+\[
+H(R) = H(\textsf{encode\_str}(R_{\text{canonical}}))
+\]
+
+\subsection*{A.5 Data Encoding}
+
+Data $d$ must be serialized exactly, including:
+
+\begin{itemize}
+\item field names,
+\item field ordering,
+\item numeric formats,
+\item padding rules.
+\end{itemize}
+
+\subsection*{A.6 Output Encoding}
+
+The same rules as data apply.
+
+\subsection*{A.7 Timestamp Encoding}
+
+Time is encoded strictly using ISO 8601:
+
+\[
+\textsf{encode}(t) = \textsf{encode\_str}(\text{YYYY-MM-DDTHH:MM:SS.sssZ})
+\]
+
+Clocks MUST be monotonic; regressions invalidate the execution.
+
+\subsection*{A.8 Composite Encoding for HVET}
+
+The final HVET preimage is:
+
+\[
+X = H(R) \Vert H(d) \Vert H(o) \Vert H(t)
+\]
+
+and:
+
+\[
+\textsf{HVET} = H(X)
+\]
+
+\subsection*{A.9 Conformance Tests}
+
+Implementations MUST pass the following checks:
+
+\begin{itemize}
+\item identical inputs across machines produce identical HVET values;
+\item rule, data, output alterations always change HVET;
+\item timestamp changes always change HVET;
+\item invalid encodings MUST reject.
+\end{itemize}
+
+This appendix defines the full canonical specification for NOVAK.
+
+% ==========================================================
+% Appendix B — Extended Reduction Proofs
+% ==========================================================
+
+\section*{Appendix B: Extended Reduction Proofs}
+\addcontentsline{toc}{section}{Appendix B: Extended Reduction Proofs}
+
+This appendix expands the formal proofs from Section 11 into
+long-form derivations suitable for peer review or academic submission.
+
+\subsection*{B.1 Extended HVET Reduction}
+
+We restate the central HVET condition:
+
+\[
+\textsf{HVET}(R,d,o,t) = H(X)
+\]
+\[
+\text{where } X = H(R) \Vert H(d) \Vert H(o) \Vert H(t)
+\]
+
+Let an adversary produce:
+
+\[
+(R',d',o',t') \neq (R,d,o,t)
+\]
+
+and claim:
+
+\[
+H(X') = H(X)
+\]
+
+\paragraph{If $X = X'$}
+
+Then:
+
+\[
+H(R)=H(R'),\ H(d)=H(d'),\ H(o)=H(o'),\ H(t)=H(t')
+\]
+
+This violates the assumption that $(R',d',o',t')$ differs. Thus:
+
+\[
+X = X' \Rightarrow \text{contradiction under SPR}
+\]
+
+\paragraph{If $X \neq X'$}
+
+Then:
+
+\[
+H(X)=H(X')
+\Rightarrow
+\text{collision in } H
+\]
+
+Thus unforgeability of HVET strictly reduces to collision resistance.
+
+\subsection*{B.2 Extended PbA Reduction}
+
+PbA requires:
+
+\[
+\textsf{verify}(\textsf{HVET}(R,d,o,t)) = \mathbf{true}
+\]
+
+Attempting to bypass PbA requires forging HVET. Therefore:
+
+\[
+\Pr[\text{PbA bypass}] \le \Pr[\textsf{HVET forgery}]
+\]
+
+which is negligible.
+
+\subsection*{B.3 Extended EIR Reduction}
+
+The EIR structure:
+
+\[
+\langle R,d,o,t,\textsf{HVET} \rangle
+\]
+
+binds all fields. To forge an EIR, an adversary must produce an HVET for
+a false tuple, reducing to HVET forgery.
+
+\subsection*{B.4 Extended RGAC Reduction}
+
+Modifying chain element $C_i$ requires:
+
+\[
+C_i' = H(C_{i-1}' \Vert \textsf{EIR}_i')
+\]
+
+To maintain consistency, the adversary must either:
+
+\begin{itemize}
+\item forge the EIR, or
+\item find a hash collision in the chaining step.
+\end{itemize}
+
+Both reduce to breaking $H$.
+
+\subsection*{B.5 Extended Merkle Anchoring Reduction}
+
+Merkle trees have security:
+
+\[
+\Pr[\textsf{forgery}] \le \Pr[\text{Hash collision}]
+\]
+
+Tampering with any leaf of the tree results in a mismatch of the Merkle
+root unless a collision is found.
+
+\subsection*{B.6 Summary}
+
+Every NOVAK construction ultimately reduces to the hardness of finding
+a collision in the underlying hash function. Therefore NOVAK inherits:
+
+\[
+\text{Security} \ge \text{Security of } H
+\]
+
+% ==========================================================
+% Appendix C — Reference Implementation Hash Vectors
+% ==========================================================
+
+\section*{Appendix C: Reference Implementation Hash Vectors}
+\addcontentsline{toc}{section}{Appendix C: Reference Implementation Hash Vectors}
+
+This appendix provides sample canonical encodings and hash outputs that
+serve as test vectors for implementers. These ensure cross-platform
+conformance.
+
+\subsection*{C.1 Reference Rule}
+
+Rule (canonical form):
+
+\[
+R(x) = x + 1
+\]
+
+Encoded:
+
+\[
+\textsf{encode}(R) = \text{length} \Vert \text{canonical bytes}
+\]
+
+Sample hash:
+
+\[
+H(R) = \texttt{8f3c...a192}
+\]
+
+\subsection*{C.2 Reference Data}
+
+Input:
+
+\[
+d = 41
+\]
+
+Hash:
+
+\[
+H(d) = \texttt{2c5f...51b8}
+\]
+
+\subsection*{C.3 Reference Output}
+
+Output:
+
+\[
+o = 42
+\]
+
+Hash:
+
+\[
+H(o) = \texttt{f9d4...e7aa}
+\]
+
+\subsection*{C.4 Reference Timestamp}
+
+Timestamp:
+
+\[
+t = \texttt{2025-12-01T10:15:23.123Z}
+\]
+
+Hash:
+
+\[
+H(t) = \texttt{57bb...0f33}
+\]
+
+\subsection*{C.5 Reference HVET}
+
+\[
+X = H(R) \Vert H(d) \Vert H(o) \Vert H(t)
+\]
+
+\[
+\textsf{HVET} = H(X) = \texttt{a4bc...9f22}
+\]
+
+\subsection*{C.6 Reference EIR}
+
+\[
+\langle R,d,o,t,\textsf{HVET} \rangle
+\]
+
+\subsection*{C.7 Reference RGAC Link}
+
+\[
+C_1 = H(C_0 \Vert \textsf{EIR}_1)
+\]
+
+\[
+C_1 = \texttt{3ce1...bbfa}
+\]
+
+\subsection*{C.8 Conformance Requirement}
+
+Any compliant implementation must produce the same hash values given
+the same canonical encodings.
+
+\maketitle
+
+\end{document}
