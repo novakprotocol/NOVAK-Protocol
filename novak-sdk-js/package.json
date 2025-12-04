@@ -5,6 +5,7 @@
   "license": "SEE LICENSE_NPSL.txt",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
     "./hvet": "./dist/hvet.js",
