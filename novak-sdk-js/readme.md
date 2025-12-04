@@ -20,3 +20,45 @@ The SDK is fully modular, tree-shakeable, and ESM-only.
 ---
 
 ## Installation
+
+
+---
+
+## Example Usage
+
+### Compute a full HVET suite
+
+```ts
+import { computeHVET } from "@novak/sdk/hvet";
+
+const result = await computeHVET(file);
+console.log(result.sha256);
+console.log(result.sha3_512);
+
+npm install @novak/sdk
+
+---
+
+## Example Usage
+
+### Compute a full HVET suite
+
+```ts
+import { computeHVET } from "@novak/sdk/hvet";
+
+const result = await computeHVET(file);
+console.log(result.sha256);
+console.log(result.sha3_512);
+
+Generate an Execution Identity Receipt
+
+import { buildEIR } from "@novak/sdk/eir";
+
+const eir = buildEIR(meta, hashes, timestamp);
+console.log(eir);
+
+Proof-Before-Action
+
+import { proofBeforeAction } from "@novak/sdk/pba";
+
+const output = await proofBeforeAction(rule, data, action);
