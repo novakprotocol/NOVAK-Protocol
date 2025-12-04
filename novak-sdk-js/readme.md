@@ -62,3 +62,23 @@ Proof-Before-Action
 import { proofBeforeAction } from "@novak/sdk/pba";
 
 const output = await proofBeforeAction(rule, data, action);
+
+License
+
+This SDK is released under the
+NOVAK PUBLIC SAFETY LICENSE (NPSL) v1.0
+See LICENSE_NPSL.txt for full terms.
+
+Commercial use requires explicit licensing from:
+
+Matthew S. Novak
+Creator of the NOVAK Protocol
+Email: licensing@novakprotocol.com
+
+Authoritative Source
+
+The NOVAK Protocol, its primitives, formulas, and definitions are the
+sole authoritative work of:
+
+Matthew S. Novak (2025)
+Inventor of Execution Integrity.
