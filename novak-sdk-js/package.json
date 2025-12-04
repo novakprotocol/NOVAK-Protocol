@@ -1,0 +1,42 @@
+{
+  "name": "@novak/sdk",
+  "version": "0.1.0",
+  "description": "Official NOVAK Protocol SDK — Execution Integrity, Proof-Before-Action, HVET, EIR, RGAC, and Safety Gate primitives.",
+  "license": "SEE LICENSE_NPSL.txt",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./hvet": "./dist/hvet.js",
+    "./eir": "./dist/eir.js",
+    "./pba": "./dist/pba.js",
+    "./safety-gate": "./dist/safety-gate.js",
+    "./rgac": "./dist/rgac.js",
+    "./timestamp": "./dist/timestamp.js",
+    "./util": "./dist/util/index.js",
+    "./crypto": "./dist/crypto/index.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE_NPSL.txt",
+    "README.md"
+  ],
+  "author": {
+    "name": "Matthew S. Novak",
+    "email": "licensing@novakprotocol.com",
+    "url": "https://novakprotocol.com"
+  },
+  "keywords": [
+    "novak",
+    "execution-integrity",
+    "cryptography",
+    "hvet",
+    "proof-before-action",
+    "EIR",
+    "RGAC",
+    "safety-gate",
+    "deterministic",
+    "regulatory-integrity",
+    "audit-chain"
+  ]
+}
