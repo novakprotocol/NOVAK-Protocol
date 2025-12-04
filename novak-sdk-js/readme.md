@@ -65,6 +65,8 @@ const output = await proofBeforeAction(rule, data, action);
 
 License
 
+##
+
 This SDK is released under the
 NOVAK PUBLIC SAFETY LICENSE (NPSL) v1.0
 See LICENSE_NPSL.txt for full terms.
